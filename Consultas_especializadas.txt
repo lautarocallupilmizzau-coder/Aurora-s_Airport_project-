@@ -1,0 +1,43 @@
+SELECT * from flights;
+SELECT * FROM costs;
+SELECT * FROM surveys;
+-- ¿Que rutas son más costosas y por qué?
+SELECT f.destination, SUM(c.fuel_cost) AS ruta_mas_costosa
+FROM costs c
+JOIN flights f ON c.flight_id = f.flight_id
+GROUP BY c.fuel_cost
+ORDER BY f.destination;
+-- ¿Que aeropuertos están generando más retrasos?
+SELECT origin AS aeropuerto, AVG(timestampdiff(MINUTE, scheduled_departure, actual_departure)) AS retraso_por_aeropuerto
+FROM flights
+GROUP BY origin
+ORDER BY retraso_por_aeropuerto DESC;
+-- ¿Que componente del coste (Combustible, tripulación, tasas, mantenimiento) es el más caro en promedio?
+SELECT component, avg_cost
+FROM (
+SELECT 'fuel_cost' AS component, AVG(fuel_cost) avg_cost FROM costs
+UNION ALL
+SELECT 'crew_cost', AVG(crew_cost) FROM costs
+UNION ALL
+SELECT 'airport_fees', AVG(airport_fees) FROM costs
+UNION ALL
+SELECT 'maintenance_cost', AVG(maintenance_cost) FROM costs
+) AS t
+ORDER BY avg_cost DESC
+LIMIT 1;
+-- ¿Que vuelos tienen rating menor a 3?
+SELECT flight_id, rating, comment
+FROM surveys
+WHERE rating < 3;
+-- ¿Cuál es el coste total de los vuelos con rating menor a 3?
+SELECT 
+    f.destination, 
+    f.flight_id, 
+    s.rating AS vuelos, 
+    AVG(c.fuel_cost) AS coste_total
+FROM costs c
+JOIN flights f ON c.flight_id = f.flight_id
+JOIN surveys s ON s.flight_id = f.flight_id
+WHERE s.rating < 3
+GROUP BY f.destination, f.flight_id, s.rating
+LIMIT 0, 1000;
